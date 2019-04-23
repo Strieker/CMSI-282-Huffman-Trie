@@ -22,16 +22,22 @@ public class HuffmanTests {
         // byte 1: 0100 0000 = 64 (0 = "A", 1 = "B")
         // [!] Only first 2 bits of byte 1 are meaningful
         byte[] compressed = {2, 64};
+        for(int i = 0; i < h.compress("AB").length; i++) {
+            System.out.println(h.compress("AB")[i]);
+        }
         assertArrayEquals(compressed, h.compress("AB"));
     }
     
     @Test
     public void comp_t1() {
-        Huffman h = new Huffman("AB");
+        Huffman h = new Huffman("BA");
         // byte 0: 0000 0010 = 2 (message length = 2)
         // byte 1: 1000 0000 = -128 (0 = "A", 1 = "B")
         // [!] Only first 2 bits of byte 1 are meaningful
         byte[] compressed = {2, -128};
+//        for(int i = 0; i < h.compress("BA").length; i++) {
+//            System.out.println(h.compress("BA")[i]);
+//        }
         assertArrayEquals(compressed, h.compress("BA"));
     }
     
@@ -43,6 +49,9 @@ public class HuffmanTests {
         // byte 2: 1000 0000 = -128
         // [!] Only first bit of byte 2 is meaningful
         byte[] compressed = {6, -121, -128};
+        for(int i = 0; i < h.compress("ABBBCC").length; i++) {
+            System.out.println(h.compress("ABBBCC")[i]);
+        }
         assertArrayEquals(compressed, h.compress("ABBBCC"));
     }
     

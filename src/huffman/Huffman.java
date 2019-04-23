@@ -25,17 +25,12 @@ public class Huffman {
     	Character currentLetter;
     	for(int i = 0; i < corpus.length(); i++) {
     		currentLetter = corpus.charAt(i);
-    		for(int j = 1; j < corpus.length(); j++) {
-    			if(corpus.charAt(j) == currentLetter) {
-        			if(charCountPairings.containsKey(currentLetter)) {
-        				count = charCountPairings.get(currentLetter);
-        				charCountPairings.replace(currentLetter, count, count+1);
-        			} else {
-        				charCountPairings.put(currentLetter, 1);
-        			}
-        		}
-    		}
-    		
+    		if(charCountPairings.containsKey(currentLetter)) {
+        		count = charCountPairings.get(currentLetter);
+        		charCountPairings.replace(currentLetter, count, count+1);
+        	} else {
+        		charCountPairings.put(currentLetter, 1);
+    		}	
     	}
     }
     
@@ -43,6 +38,7 @@ public class Huffman {
 		HuffNode currentNode;
 		for(Map.Entry<Character,Integer> entry: charCountPairings.entrySet()) {
 			currentNode =  new HuffNode(entry.getKey(), entry.getValue());
+//			System.out.println(entry.getKey() + " " + entry.getValue());
 			trie.add(currentNode);
 		}
     }
@@ -59,7 +55,7 @@ public class Huffman {
     		trie.add(toAdd);
     	}
     	trieRoot = trie.poll();
-    	System.out.println();
+//    	System.out.println();
     }
     
     private void constructEncodingMap(String byteEncoding, HuffNode iterator, 
@@ -97,9 +93,6 @@ public class Huffman {
     	this.encodingMap = new HashMap<>();
     	constructEncodingMap("",trieRoot, this.encodingMap);
     	for(Map.Entry<Character,String> entry: encodingMap.entrySet()) {
-    		System.out.println(entry.getKey());
-    		System.out.println(entry.getValue());
-    		System.out.println("yup");
     	}
     }
     
@@ -118,28 +111,49 @@ public class Huffman {
      *         (2) the bitstring containing the message itself, (3) possible
      *         0-padding on the final byte.
      */
+    
+    private String addPadded0s(String byteEncoding) {
+    	if(byteEncoding.length() % 8 != 0) {
+    		while( byteEncoding.length() % 8 != 0) {
+    			byteEncoding = byteEncoding + "0";
+    		}
+    	}
+    	return byteEncoding;
+    }
+    
+    
+    
     public byte[] compress (String message) {
-        throw new UnsupportedOperationException();
-
-        // IF % 8 IS NOT 0 ADD PADDED 0S UNTIL IT IS AND YOU ALSO HAVE TO STORE THE ORIGINAL LENGTH SO YOU MAKE SURE THE 
-        // PADDING DOESNT MESS ANYTHING UP 
-        
-//        Message Length: the first byte will represent 
-//        a positive number with a maximum value of 127 indicating 
-//        the number of characters that were encoded in the message content that follows.
-//        Message Content: the bytes that follow the first will 
-//        be filled as-needed to represent the contiguous Huffman Coded, compressed text corpus.
-//        Padding: the last byte in the compressed corpus may contain some 
-//        0-padding if not all bits of the final byte are used. 
-//        Note that this padding will never be larger than 7 bits.
-        
-        //LENGTH|ENCODING|PADDED0S
-        
-//        For constructing the resulting byte array, look into using Java's ByteArrayOutputStream
-//        For pesky end bytes in the content that require padding, look into Java's bitshift operator: <<
-//        In constructing the bytes to write using ByteArrayOutputStream, 
-//        you may find Integer.parseInt and Byte.parseByte methods useful 
-//        (consider using the signatures with radix 2 for binary!).
+    	// WEIRD TEST CASES
+    	Byte lengthOfMessage =(byte)message.length();
+    	String stringEncoding = "";
+    	ArrayList<Byte>compressedEncodingArrayListWorkAround = new ArrayList<>();
+    	compressedEncodingArrayListWorkAround.add(lengthOfMessage);
+    	for(int i = 0; i < message.length(); i++) {
+    		stringEncoding += encodingMap.get(message.charAt(i));
+    	}
+    	stringEncoding = addPadded0s(stringEncoding);
+    	int currentByte = 0; 
+    	int numBits = 0;
+    	for(int i = 0; i < stringEncoding.length(); i++) {
+    		if(numBits < 8) {
+    			if(stringEncoding.charAt(i) == '1') {
+        			currentByte += Math.pow(2, 7 - numBits);
+        		}
+    		} 
+    		if (numBits == 7){
+    			compressedEncodingArrayListWorkAround.add((byte)currentByte);
+    			numBits = -1;
+    			currentByte = 0;
+    		}
+    		numBits++;
+    	} 
+    	// IS IT OKAY I DID IT LIKE THIS?
+    	byte[] compressedEncoding = new byte[compressedEncodingArrayListWorkAround.size()];
+    	for(int i = 0; i < compressedEncoding.length; i++) {
+    		compressedEncoding[i] = compressedEncodingArrayListWorkAround.get(i);
+    	}
+    	return compressedEncoding;
     }
     
     
@@ -158,17 +172,48 @@ public class Huffman {
      *        0-padding on the final byte.
      * @return Decompressed String representation of the compressed bytecode message.
      */
+    
+    
+    private char findCharBasedOnByteValue(String byteEncoding) {
+    	for(Map.Entry<Character,String> entry: encodingMap.entrySet()) {
+    		if(entry.getValue().equals(byteEncoding)) {
+    			return entry.getKey();
+    		}
+    	}
+    	return '/';
+    }
+    
+    
+//    private String createNewString(byte byteEncoding) {
+//    	String stringEncoding = "";
+//    	int encoding = 
+//    }
+    
     public String decompress (byte[] compressedMsg) {
-        throw new UnsupportedOperationException();
+    	int lengthWithoutPadding = compressedMsg[0];
+    	byte[] copy = new byte[compressedMsg.length - 1];
+        String currentByteString = "";
+        String decompressedMessage = "";
+        int firstEncodedBit = 0;
+        int lastEncodedBit = 0;
+        int counter = 0; 
+        for(int i = 1; i < compressedMsg.length; i++) {
+        	copy[i - 1] = compressedMsg[i];
+        }
         
-//        Remember that you have access to the following: 
-//        (1) the first byte of the compressedMsg indicates 
-//        how many characters need to be decoded in what follows, 
-//        and (2) the trieRoot holds (after construction) the Huffman 
-//        Trie that compressed the message that you are decompressing.
-//        You might find the String.format method useful for unpacking 
-//        a particular byte into its bitstring representation for ease 
-//        of traversing the Huffman Trie.
+        while((counter < lengthWithoutPadding) && (lastEncodedBit < compressedMsg.length)) {
+        	if(encodingMap.containsValue(currentByteString.substring(firstEncodedBit, lastEncodedBit))) {
+        		// HOW TO DO THIS WITHOUT MAKING IT N^2?
+        		decompressedMessage = decompressedMessage + Character.toString(findCharBasedOnByteValue(currentByteString));
+        		currentByteString = "";
+        		firstEncodedBit = lastEncodedBit;
+            	counter++;
+        	}
+        	lastEncodedBit++;
+        }
+        	
+        
+        return decompressedMessage;
     }
     
     
