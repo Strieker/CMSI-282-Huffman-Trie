@@ -2,6 +2,8 @@ package huffman;
 
 import java.util.*;
 
+import java.math.*;
+
 /**
  * Huffman instances provide reusable Huffman Encoding Maps for
  * compressing and decompressing text corpi with comparable
@@ -121,39 +123,31 @@ public class Huffman {
     	return byteEncoding;
     }
     
+    private String constructStringBitEncoding(String message, String stringBitEncoding) {
+    	for(int i = 0; i < message.length(); i++) {
+    		stringBitEncoding += encodingMap.get(message.charAt(i));
+    	}
+    	return addPadded0s(stringBitEncoding);
+    }
+    
     
     
     public byte[] compress (String message) {
     	// WEIRD TEST CASES
-    	Byte lengthOfMessage =(byte)message.length();
-    	String stringEncoding = "";
-    	ArrayList<Byte>compressedEncodingArrayListWorkAround = new ArrayList<>();
-    	compressedEncodingArrayListWorkAround.add(lengthOfMessage);
-    	for(int i = 0; i < message.length(); i++) {
-    		stringEncoding += encodingMap.get(message.charAt(i));
-    	}
-    	stringEncoding = addPadded0s(stringEncoding);
     	int currentByte = 0; 
-    	int numBits = 0;
-    	for(int i = 0; i < stringEncoding.length(); i++) {
-    		if(numBits < 8) {
-    			if(stringEncoding.charAt(i) == '1') {
-        			currentByte += Math.pow(2, 7 - numBits);
-        		}
-    		} 
-    		if (numBits == 7){
-    			compressedEncodingArrayListWorkAround.add((byte)currentByte);
-    			numBits = -1;
-    			currentByte = 0;
-    		}
-    		numBits++;
+    	int leadingIndex  = 0;
+    	int indexOfByteArray = 1;
+    	Byte lengthOfMessage =(byte)message.length();
+    	String stringByteEncoding = constructStringBitEncoding(message, "");
+    	byte[] compressedEncodingArray = new byte[(stringByteEncoding.length() / 8) + 1];
+    	compressedEncodingArray[0] = lengthOfMessage;
+    	for(int trailingIndex = 7; trailingIndex < stringByteEncoding.length(); trailingIndex += 8) {
+    		currentByte = Integer.parseInt(stringByteEncoding.substring(leadingIndex,trailingIndex + 1), 2);
+    		compressedEncodingArray[indexOfByteArray] = (byte)currentByte;
+    		leadingIndex = trailingIndex;
+    		indexOfByteArray++;
     	} 
-    	// IS IT OKAY I DID IT LIKE THIS?
-    	byte[] compressedEncoding = new byte[compressedEncodingArrayListWorkAround.size()];
-    	for(int i = 0; i < compressedEncoding.length; i++) {
-    		compressedEncoding[i] = compressedEncodingArrayListWorkAround.get(i);
-    	}
-    	return compressedEncoding;
+    	return compressedEncodingArray;
     }
     
     
@@ -183,37 +177,33 @@ public class Huffman {
     	return '/';
     }
     
+    private String stringBitEncoding(byte[] compressedMsg, String decompressedMessage) {
+    	  for(int i = 1; i < compressedMsg.length; i++) {
+          	decompressedMessage += String.format("%8s", Integer.toBinaryString(compressedMsg[i] & 0xFF)).replace(' ', '0');
+          }
+    	  return decompressedMessage;
+    }
     
-//    private String createNewString(byte byteEncoding) {
-//    	String stringEncoding = "";
-//    	int encoding = 
-//    }
-    
-    public String decompress (byte[] compressedMsg) {
-    	int lengthWithoutPadding = compressedMsg[0];
-    	byte[] copy = new byte[compressedMsg.length - 1];
-        String currentByteString = "";
-        String decompressedMessage = "";
-        int firstEncodedBit = 0;
+    private String findOriginalMessage(String decompressedMessage, byte[] compressedMsg, int lengthWithoutPadding) {
+    	int firstEncodedBit = 0;
         int lastEncodedBit = 0;
         int counter = 0; 
-        for(int i = 1; i < compressedMsg.length; i++) {
-        	copy[i - 1] = compressedMsg[i];
-        }
-        
-        while((counter < lengthWithoutPadding) && (lastEncodedBit < compressedMsg.length)) {
+        String currentByteString = stringBitEncoding(compressedMsg, "");
+    	while((counter < lengthWithoutPadding)) {
         	if(encodingMap.containsValue(currentByteString.substring(firstEncodedBit, lastEncodedBit))) {
-        		// HOW TO DO THIS WITHOUT MAKING IT N^2?
-        		decompressedMessage = decompressedMessage + Character.toString(findCharBasedOnByteValue(currentByteString));
-        		currentByteString = "";
+        		decompressedMessage = decompressedMessage + Character.toString(findCharBasedOnByteValue(currentByteString.substring(firstEncodedBit, lastEncodedBit)));
         		firstEncodedBit = lastEncodedBit;
             	counter++;
         	}
         	lastEncodedBit++;
         }
-        	
-        
-        return decompressedMessage;
+    	return decompressedMessage;
+  }
+    
+    public String decompress (byte[] compressedMsg) {
+    	int lengthWithoutPadding = compressedMsg[0];
+    	String decompressedMessage = "";
+        return findOriginalMessage(decompressedMessage, compressedMsg, lengthWithoutPadding);
     }
     
     

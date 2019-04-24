@@ -22,9 +22,9 @@ public class HuffmanTests {
         // byte 1: 0100 0000 = 64 (0 = "A", 1 = "B")
         // [!] Only first 2 bits of byte 1 are meaningful
         byte[] compressed = {2, 64};
-        for(int i = 0; i < h.compress("AB").length; i++) {
-            System.out.println(h.compress("AB")[i]);
-        }
+//        for(int i = 0; i < h.compress("AB").length; i++) {
+//            System.out.println(h.compress("AB")[i]);
+//        }
         assertArrayEquals(compressed, h.compress("AB"));
     }
     
